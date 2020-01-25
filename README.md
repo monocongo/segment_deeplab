@@ -36,6 +36,7 @@ as such we need to have CUDA and cuDNN installed.
     ```
 2. Get the TensorFlow DeepLab API:
     ```bash
+    $ cd $GIT_DIR
     $ git clone https://github.com/tensorflow/models.git
     $ cd models/research
     $ export TFMODELS=`pwd`
@@ -60,10 +61,12 @@ is the primary channel):
     >>> import tensorflow
     >>>
     ```
-5. Set the `models/research` directory into the `PYTHONPATH` environment variable:
+5. Set the TensorFlow `models/research` and `models/research/slim` directories 
+into the `PYTHONPATH` environment variable:
     ```bash
-    $ export PYTHONPATH=/home/ubuntu/git/models/research
+    $ export PYTHONPATH=${TFMODELS}/research:${TFMODELS}/research/slim
     ```
+   
 ### Training Dataset
 Acquire a dataset of images and corresponding object segmentation masks. This project 
 assumes a dataset with a directory of image files in JPG format and a corresponding 
@@ -80,6 +83,8 @@ In order to convert the dataset of images and masks into TFRecords, which is the
 data format used for training data, we'll use the [cvdata](https://pypi.org/project/cvdata/) 
 package's `cvdata_mask` entry point:
 ```bash
+$ export DATASET_NAME=basins
+$ export DATASET_DIR=${DEEPLAB}/datasets/${DATASET_NAME}
 $ cvdata_mask --images /data/images --masks /data/masks \
 >       --in_format png --out_format tfrecord \
 >       --tfrecords /data/tfrecords \
@@ -89,7 +94,32 @@ The above example execution will result in eight TFRecord files -- four TFRecord
 for the training set, comprising of 80% of the images/masks, and four TFRecords 
 for the validation set, comprising of 20% of the images/masks.
 
-Once we have the TFRecords for training and validation we then modify the file `$DEEPLAB/segmentation_dataset.py`
+Once we have the TFRecords for training and validation we then modify the file 
+`$DEEPLAB/datasets/data_generator.py` to include a dataset configuration. This 
+includes creating a new `DatasetDescriptor` for the dataset and adding this descriptor 
+into the `_DATASETS_INFORMATION` dictionary. Because the TFRecord creation process 
+used above uses the file name prefixes "train" and "valid" for the respective training 
+and validation TFRecords then we use these prefixes as the keys in the descriptor. 
+For example:
+```python
+_BASINS_INFORMATION = DatasetDescriptor(
+    splits_to_sizes={
+        'train': 132,  # num of samples in images/training
+        'valid': 34,  # num of samples in images/validation
+    },
+    num_classes=1,
+    ignore_label=255,
+)
+
+...
+
+_DATASETS_INFORMATION = {
+    'basins': _BASINS_INFORMATION,
+    'cityscapes': _CITYSCAPES_INFORMATION,
+    'pascal_voc_seg': _PASCAL_VOC_SEG_INFORMATION,
+    'ade20k': _ADE20K_INFORMATION,
+}
+```
 ### Training
 
 ##### Pretrained model
@@ -118,10 +148,10 @@ $ python deeplab/train.py \
     --decoder_output_stride=4 \
     --train_crop_size="513,513" \
     --train_batch_size=1 \
-    --dataset="basins" \
-    --tf_initial_checkpoint=/home/ubuntu/deeplab/pretrained/x65-b2u1s2p-d48-2-3x256-sc-cr300k_init.ckpt.data-00000-of-00001 \
-    --train_logdir=${DEEPLAB}/datasets/basins/exp/train_on_train_set/train \
-    --dataset_dir=${DEEPLAB}/datasets/basins
+    --dataset=${DATASET_NAME} \
+    --tf_initial_checkpoint=/home/ubuntu/deeplab/pretrained/x65-b2u1s2p-d48-2-3x256-sc-cr300k_init.ckpt.index \
+    --train_logdir=${DATASET_DIR}/exp/train_on_train_set/train \
+    --dataset_dir=${DATASET_DIR}
 ```
 
 ##### Evaluation script
@@ -140,8 +170,8 @@ $ python deeplab/eval.py \
     --output_stride=16 \
     --decoder_output_stride=4 \
     --eval_crop_size="513,513" \
-    --dataset="basins" \
-    --checkpoint_dir=${DEEPLAB}/datasets/basins/exp/train_on_train_set/train \
-    --eval_logdir=${DEEPLAB}/datasets/basins/exp/train_on_train_set/eval \
-    --dataset_dir=${DEEPLAB}/datasets/basins
+    --dataset=${DATASET_NAME} \
+    --checkpoint_dir=${DATASET_DIR}/exp/train_on_train_set/train \
+    --eval_logdir=${DATASET_DIR}/exp/train_on_train_set/eval \
+    --dataset_dir=${DATASET_DIR}
 ```
