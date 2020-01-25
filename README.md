@@ -68,5 +68,15 @@ directory of mask image files in PNG format matching to each image file.
 A good example dataset that includes image mask files is the 
 [ISIC 2018 Skin Lesion Analysis Dataset](https://challenge2018.isic-archive.com/).
 
+In order to convert the dataset of images and masks into TFRecords, which is the 
+data format used for training data, we'll use the [cvdata](https://pypi.org/project/cvdata/) 
+package's `cvdata_mask` entry point:
+```bash
+$ cvdata_mask --images /data/images --masks /data/masks \
+>       --in_format png --out_format tfrecord \
+>       --tfrecords /data/tfrecords \
+>       --shards 4 -- train_pct 0.8
+```
+
 ### Training
 
