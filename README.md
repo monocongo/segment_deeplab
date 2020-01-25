@@ -37,7 +37,9 @@ as such we need to have CUDA and cuDNN installed.
 2. Get the TensorFlow DeepLab API:
     ```bash
     $ git clone https://github.com/tensorflow/models.git
-    $ cd models/research/deeplab
+    $ cd models/research
+    $ export TFMODELS=`pwd`
+    $ cd deeplab
     $ export DEEPLAB=`pwd`
     ```
 3. Install additional libraries we'll use in our project (assumes that `conda-forge` 
@@ -103,6 +105,7 @@ Run the [DeepLab training script](https://github.com/tensorflow/models/blob/mast
 referencing the pretrained model checkpoint, local dataset directory, training 
 log directory, etc. For example:
 ```bash
+$ cd ${TFMODELS}
 $ python deeplab/train.py \
     --logtostderr \
     --training_number_of_steps=30000 \
@@ -117,7 +120,28 @@ $ python deeplab/train.py \
     --train_batch_size=1 \
     --dataset="basins" \
     --tf_initial_checkpoint=/home/ubuntu/deeplab/pretrained/x65-b2u1s2p-d48-2-3x256-sc-cr300k_init.ckpt.data-00000-of-00001 \
-    --train_logdir=$DEEPLAB/datasets/basins/exp/train_on_train_set/train \
-    --dataset_dir=$DEEPLAB/datasets/basins
+    --train_logdir=${DEEPLAB}/datasets/basins/exp/train_on_train_set/train \
+    --dataset_dir=${DEEPLAB}/datasets/basins
 ```
 
+##### Evaluation script
+Once the model has started training and has written some checkpoints then an evaluation 
+can be preformed using the [DeepLab evaluation script](https://github.com/tensorflow/models/blob/master/research/deeplab/eval.py). 
+For example:
+```bash
+$ cd ${TFMODELS}
+$ python deeplab/eval.py \
+    --logtostderr \
+    --eval_split="val" \
+    --model_variant="xception_65" \
+    --atrous_rates=6 \
+    --atrous_rates=12 \
+    --atrous_rates=18 \
+    --output_stride=16 \
+    --decoder_output_stride=4 \
+    --eval_crop_size="513,513" \
+    --dataset="basins" \
+    --checkpoint_dir=${DEEPLAB}/datasets/basins/exp/train_on_train_set/train \
+    --eval_logdir=${DEEPLAB}/datasets/basins/exp/train_on_train_set/eval \
+    --dataset_dir=${DEEPLAB}/datasets/basins
+```
