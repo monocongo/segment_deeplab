@@ -63,9 +63,13 @@ is the primary channel):
 ### Training Dataset
 Acquire a dataset of images and corresponding object segmentation masks. This project 
 assumes a dataset with a directory of image files in JPG format and a corresponding 
-directory of mask image files in PNG format matching to each image file.
+directory of mask image files in PNG format matching to each image file. The mask 
+files are expected to contain mask values corresponding to the class ID of the objects 
+being masked, with unmasked/background having value 0. For example if we have two 
+classes, dog and cat with class IDs 1 and 2 respectively, then all dog masks in a 
+mask image will be denoted with value 1 and all cat masks will be denoted with value 2.
 
-A good example dataset that includes image mask files is the 
+An example dataset that includes image mask files is the 
 [ISIC 2018 Skin Lesion Analysis Dataset](https://challenge2018.isic-archive.com/).
 
 In order to convert the dataset of images and masks into TFRecords, which is the 
@@ -77,6 +81,41 @@ $ cvdata_mask --images /data/images --masks /data/masks \
 >       --tfrecords /data/tfrecords \
 >       --shards 4 -- train_pct 0.8
 ```
+The above example execution will result in eight TFRecord files -- four TFRecords 
+for the training set, comprising of 80% of the images/masks, and four TFRecords 
+for the validation set, comprising of 20% of the images/masks.
 
+Once we have the TFRecords for training and validation we then modify the file `$DEEPLAB/segmentation_dataset.py`
 ### Training
+
+##### Pretrained model
+Download a pretrained model checkpoint from the 
+[DeepLab Model Zoo](https://github.com/tensorflow/models/blob/master/research/deeplab/g3doc/model_zoo.md):
+```bash
+$ wget http://download.tensorflow.org/models/xception_65_coco_pretrained_2018_10_02.tar.gz
+$ tar -zxf xception_65_coco_pretrained_2018_10_02.tar.gz
+``` 
+
+##### Training script
+Run the [DeepLab training script](https://github.com/tensorflow/models/blob/master/research/deeplab/train.py) 
+referencing the pretrained model checkpoint, local dataset directory, training 
+log directory, etc. For example:
+```bash
+$ python deeplab/train.py \
+    --logtostderr \
+    --training_number_of_steps=30000 \
+    --train_split="train" \
+    --model_variant="xception_65" \
+    --atrous_rates=6 \
+    --atrous_rates=12 \
+    --atrous_rates=18 \
+    --output_stride=16 \
+    --decoder_output_stride=4 \
+    --train_crop_size="513,513" \
+    --train_batch_size=1 \
+    --dataset="basins" \
+    --tf_initial_checkpoint=/home/james/deeplab/pretrained/x65-b2u1s2p-d48-2-3x256-sc-cr300k_init.ckpt.data-00000-of-00001 \
+    --train_logdir=./deeplab/datasets/basins/exp/train_on_train_set/train \
+    --dataset_dir=./deeplab/datasets/basins
+```
 
