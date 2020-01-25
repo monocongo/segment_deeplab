@@ -43,7 +43,7 @@ as such we need to have CUDA and cuDNN installed.
 3. Install additional libraries we'll use in our project (assumes that `conda-forge` 
 is the primary channel):
     ```bash
-    $ for pkg in opencv imutils imgaug tensorflow-gpu
+    $ for pkg in opencv imutils tensorflow-gpu
     > do
     > conda install $pkg --yes
     > done
@@ -55,11 +55,13 @@ is the primary channel):
     >>> import cv2
     >>> import cvdata
     >>> import imutils
-    >>> import imgaug
     >>> import tensorflow
     >>>
     ```
-
+5. Set the `models/research` directory into the `PYTHONPATH` environment variable:
+    ```bash
+    $ export PYTHONPATH=/home/ubuntu/git/models/research
+    ```
 ### Training Dataset
 Acquire a dataset of images and corresponding object segmentation masks. This project 
 assumes a dataset with a directory of image files in JPG format and a corresponding 
@@ -114,8 +116,8 @@ $ python deeplab/train.py \
     --train_crop_size="513,513" \
     --train_batch_size=1 \
     --dataset="basins" \
-    --tf_initial_checkpoint=/home/james/deeplab/pretrained/x65-b2u1s2p-d48-2-3x256-sc-cr300k_init.ckpt.data-00000-of-00001 \
-    --train_logdir=./deeplab/datasets/basins/exp/train_on_train_set/train \
-    --dataset_dir=./deeplab/datasets/basins
+    --tf_initial_checkpoint=/home/ubuntu/deeplab/pretrained/x65-b2u1s2p-d48-2-3x256-sc-cr300k_init.ckpt.data-00000-of-00001 \
+    --train_logdir=$DEEPLAB/datasets/basins/exp/train_on_train_set/train \
+    --dataset_dir=$DEEPLAB/datasets/basins
 ```
 
