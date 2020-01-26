@@ -79,13 +79,45 @@ mask image will be denoted with value 1 and all cat masks will be denoted with v
 An example dataset that includes image mask files is the 
 [ISIC 2018 Skin Lesion Analysis Dataset](https://challenge2018.isic-archive.com/).
 
-In order to convert the dataset of images and masks into TFRecords, which is the 
+##### Directory Structure
+Use a directory structure similar to the one recommended in the 
+[TensorFlow DeepLab tutorial](https://github.com/tensorflow/models/blob/master/research/deeplab/g3doc/pascal.md#recommended-directory-structure-for-training-and-evaluation):
+```
++ ${DEEPLAB}/datasets
+  + ${DATASET_NAME}
+    + images
+    + masks
+    + tfrecord
+    + exp
+      + train_on_train_set
+        + train
+        + eval
+        + vis
+```
+Create the directory structure shown above:
+```bash
+$ export DATASET_NAME=lesions
+$ cd ${DEEPLAB}/datasets
+$ mkdir ${DATASET_NAME}
+$ mkdir ${DATASET_NAME}/images
+$ mkdir ${DATASET_NAME}/masks
+$ mkdir ${DATASET_NAME}/tfrecord
+$ mkdir ${DATASET_NAME}/exp
+$ mkdir ${DATASET_NAME}/exp/train_on_train_set
+$ mkdir ${DATASET_NAME}/exp/train_on_train_set/train
+$ mkdir ${DATASET_NAME}/exp/train_on_train_set/eval
+$ mkdir ${DATASET_NAME}/exp/train_on_train_set/vis
+$ export DATASET_DIR=${DEEPLAB}/datasets/${DATASET_NAME}
+```
+At this point we should copy or move our images and corresponding masks into 
+`${DATASET_DIR}/images` and `${DATASET_DIR}/masks`.
+
+##### Conversion to TFRecords
+To convert the dataset of images and masks into TFRecords, which is the 
 data format used for training data, we'll use the [cvdata](https://pypi.org/project/cvdata/) 
 package's `cvdata_mask` entry point:
 ```bash
-$ export DATASET_NAME=basins
-$ export DATASET_DIR=${DEEPLAB}/datasets/${DATASET_NAME}
-$ cvdata_mask --images /data/images --masks /data/masks \
+$ cvdata_mask --images ${DATASET_DIR}/images --masks ${DATASET_DIR}/masks \
 >       --in_format png --out_format tfrecord \
 >       --tfrecords /data/tfrecords \
 >       --shards 4 -- train_pct 0.8
@@ -93,7 +125,9 @@ $ cvdata_mask --images /data/images --masks /data/masks \
 The above example execution will result in eight TFRecord files -- four TFRecords 
 for the training set, comprising of 80% of the images/masks, and four TFRecords 
 for the validation set, comprising of 20% of the images/masks.
+```bash
 
+```
 Once we have the TFRecords for training and validation we then modify the file 
 `$DEEPLAB/datasets/data_generator.py` to include a dataset configuration. This 
 includes creating a new `DatasetDescriptor` for the dataset and adding this descriptor 
@@ -102,7 +136,7 @@ used above uses the file name prefixes "train" and "valid" for the respective tr
 and validation TFRecords then we use these prefixes as the keys in the descriptor. 
 For example:
 ```python
-_BASINS_INFORMATION = DatasetDescriptor(
+_LESIONS_INFORMATION = DatasetDescriptor(
     splits_to_sizes={
         'train': 132,  # num of samples in images/training
         'valid': 34,  # num of samples in images/validation
@@ -114,7 +148,7 @@ _BASINS_INFORMATION = DatasetDescriptor(
 ...
 
 _DATASETS_INFORMATION = {
-    'basins': _BASINS_INFORMATION,
+    'lesions': _LESIONS_INFORMATION,
     'cityscapes': _CITYSCAPES_INFORMATION,
     'pascal_voc_seg': _PASCAL_VOC_SEG_INFORMATION,
     'ade20k': _ADE20K_INFORMATION,
